@@ -76,7 +76,7 @@ class ColorDetector():
             string: the timestamp id if images saved OK, empty string otherwise.
         """
         id = str(int(time.time())) # Obtain id
-        self.logger.error(":identify_color_contours id:{0} color: {1}".format(id, color), get_lineno())
+        self.logger.info(":identify_color_contours id:{0} color: {1}".format(id, color), get_lineno())
 
         if color not in self.colors:
             self.logger.error(":identify_color_contours id: {0} color: {1} error: Invalid color!".format(id, color), get_lineno())
@@ -92,7 +92,11 @@ class ColorDetector():
             #red_area = max(contours, key=cv2.contourArea)
             for contour in contours:
                 x, y, w, h = cv2.boundingRect(contour)
-                cv2.rectangle(image, (x, y),(x+w, y+h), (0, 0, 255), 2)
+                contour_area = cv2.contourArea(contour)
+                if self.is_valid_contour(contour_area):
+                    cv2.rectangle(image, (x, y),(x+w, y+h), (0, 0, 255), 2)
+                    #cv2.drawContours(image, contour, -1, (0, 0, 255), 2)
+                    self.logger.info(":identify_color_contours id: {0} contour_area: {1}".format(id, contour_area), get_lineno())
 
             # Make request directory
             ext = image_path.split(".")[-1]
@@ -111,6 +115,11 @@ class ColorDetector():
 
         self.logger.info(":identify_color_contours image_path: {0} color: {1} len(contours): {2} info: empty contours".format(image_path, color, len(contours)), get_lineno())
         return ""
+
+
+    def is_valid_contour(self, contour_area):
+        # todo: Com sabem el valor de l'àrea necessari per notificar de la falta de stock?
+        return contour_area >= 300
 
 
 if __name__ == "__main__":
