@@ -70,6 +70,8 @@ class ColorDetector():
         mask = cv2.inRange(image, lower, upper) # Find the color specified and apply the mask
         contours = cv2.findContours(mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2] # Find all contours
 
+        empty_holes = 0
+
         if len(contours) > 0:
             #red_area = max(contours, key=cv2.contourArea)
             for contour in contours:
@@ -77,8 +79,9 @@ class ColorDetector():
                 contour_area = cv2.contourArea(contour)
                 if self.is_valid_contour(contour_area, x, y, w, h):
                     cv2.rectangle(image, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                    empty_holes += 1
                     #cv2.drawContours(image, contour, -1, (0, 0, 255), 2)
-                    self.logger.info(":identify_color_contours id: {0} contour_area: {1} values: {2}".format(id, contour_area, (x, y, w, h)), get_lineno())
+                    self.logger.info(":identify_color_contours id: {0} contour_area: {1} empty_holes: {2} values: {3}".format(id, contour_area, empty_holes, (x, y, w, h)), get_lineno())
 
             # Make request directory
             ext = image_path.split(".")[-1]
@@ -167,7 +170,7 @@ class ColorDetector():
             |xxxxxxxF___________E______________________|
         """
 
-        return not self.is_inside(A[0], A[1], B[0], B[1], C[0], C[1], P[0], P[1]) and not self.is_inside(D[0], D[1], E[0], E[1], F[0], F[1], P[0], P[1]) and x <= C[0] and contour_area >= 300
+        return not self.is_inside(A[0], A[1], B[0], B[1], C[0], C[1], P[0], P[1]) and not self.is_inside(D[0], D[1], E[0], E[1], F[0], F[1], P[0], P[1]) and x+w <= C[0] and contour_area >= 300
 
 
     # A utility function to calculate area of triangle formed by (x1, y1), (x2, y2) and (x3, y3)
