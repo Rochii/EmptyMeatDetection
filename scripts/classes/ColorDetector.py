@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__      = "Roger Truchero Visa"
@@ -17,7 +17,7 @@ from Logger import Logger
 import cv2
 import numpy as np
 import sys
-import time
+import base64
 
 
 class ColorDetector():
@@ -42,20 +42,21 @@ class ColorDetector():
         self.F_COEFF = 0.2344
 
 
-    def identify_color_contours(self, image_path, color="green"):
+    def identify_color_contours(self, id, image_path, color="green"):
         """Identify regions between lower and upper color intervals.
         Estimate the empty area using the color.
         Based on this value send fill alarm.
         The image also shows the capture with the empty areas within a rectangle.
 
         Args:
+            id (string): Request id.
             image_path (string): Image path.
             color (string, optional): Color to detect. Defaults to "green".
 
         Returns:
-            string: the timestamp id if images saved OK, empty string otherwise.
+            dictionary: structure with the timestamp id, images path and number of empty holes.
         """
-        id = str(int(time.time())) # Obtain id
+        response = { "base64image" : "", "empty_holes" :  0 }
         self.logger.info(":identify_color_contours id:{0} color: {1}".format(id, color), get_lineno())
 
         if color not in self.colors:
@@ -70,8 +71,6 @@ class ColorDetector():
         mask = cv2.inRange(image, lower, upper) # Find the color specified and apply the mask
         contours = cv2.findContours(mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2] # Find all contours
 
-        empty_holes = 0
-
         if len(contours) > 0:
             #red_area = max(contours, key=cv2.contourArea)
             for contour in contours:
@@ -79,9 +78,8 @@ class ColorDetector():
                 contour_area = cv2.contourArea(contour)
                 if self.is_valid_contour(contour_area, x, y, w, h):
                     cv2.rectangle(image, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    empty_holes += 1
-                    #cv2.drawContours(image, contour, -1, (0, 0, 255), 2)
-                    self.logger.info(":identify_color_contours id: {0} contour_area: {1} empty_holes: {2} values: {3}".format(id, contour_area, empty_holes, (x, y, w, h)), get_lineno())
+                    response["empty_holes"] += 1
+                    self.logger.info(":identify_color_contours id: {0} contour_area: {1} empty_holes: {2} values: {3}".format(id, contour_area, response["empty_holes"], (x, y, w, h)), get_lineno())
 
             # Make request directory
             ext = image_path.split(".")[-1]
@@ -96,10 +94,13 @@ class ColorDetector():
             cv2.imwrite(save_mask_path, mask) # Save image mask
             self.logger.info(":identify_color_contours id: {0} save_mask_path: {1} info: Mask saved OK!".format(id, save_mask_path), get_lineno())
 
-            return id
+            # Encode image to base64
+            _, buffer = cv2.imencode("." + ext, image)
+            response["base64image"] = base64.b64encode(buffer).decode("utf-8")
+            return response
 
         self.logger.info(":identify_color_contours image_path: {0} color: {1} len(contours): {2} info: empty contours".format(image_path, color, len(contours)), get_lineno())
-        return ""
+        return response
 
 
     def print_triangle_lines(self, image):
@@ -228,6 +229,6 @@ class ColorDetector():
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         detector = ColorDetector()
-        id = detector.identify_color_contours(sys.argv[1])
+        id = detector.identify_color_contours("12345678765", sys.argv[1])
     else:
         print("Usage: python main.py <image_path>")
