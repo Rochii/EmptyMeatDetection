@@ -7,7 +7,7 @@ __credits__     = []
 __license__     = "GPL"
 __version__     = "1.0.0"
 __maintainer__  = "Roger Truchero Visa"
-__email__       = "rtruchero@lleida.net"
+__email__       = "truchero.roger@gmail.com"
 __status__      = "Development"
 
 
