@@ -1,4 +1,4 @@
-# Empty Meat Detection
+# Empty Meat Detection [DEPRECATED]
 
 The main idea is to develop a tool that is capable of detecting when a product, inside the meat cubicle, has been exhausted and launch an alert to the store employees to recharge the product stock.
 
